@@ -1,0 +1,109 @@
+/*
+ * ╔══════════════════════════════════════════════════════════════════╗
+ * ║  LuminaCMS — Magic UI Component Styles Repository               ║
+ * ║  Phase 3 預留位置 / Phase 4 逐步填充                              ║
+ * ╚══════════════════════════════════════════════════════════════════╝
+ *
+ * 使用說明：
+ *   - 每個區塊對應一個 Magic UI / React Bits 組件
+ *   - 樣式會在發布時透過 Template.cssContent 注入 htmlSnapshot
+ *   - 組件名稱以 .lcms-[component-name] 為前綴命名
+ *
+ * ──────────────────────────────────────────────────────────────────
+ * TODO — 待整合組件清單：
+ *   [ ] Animated Gradient Background
+ *   [ ] Shimmer Button
+ *   [ ] Bento Grid
+ *   [ ] Marquee / Ticker
+ *   [ ] Animated Beam
+ *   [ ] Blur Fade
+ *   [ ] Number Ticker
+ *   [ ] Typing Animation
+ * ──────────────────────────────────────────────────────────────────
+ */
+
+
+/* ── Shimmer Button ───────────────────────────────────────────────── */
+/*
+.lcms-shimmer-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: #111;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+.lcms-shimmer-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255,255,255,0.18) 50%,
+    transparent 60%
+  );
+  animation: shimmer 2.4s infinite;
+}
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+*/
+
+
+/* ── Bento Grid ───────────────────────────────────────────────────── */
+/*
+.lcms-bento {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.lcms-bento-card {
+  border-radius: 20px;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.lcms-bento-card.span-2 { grid-column: span 2; }
+.lcms-bento-card.span-3 { grid-column: span 3; }
+*/
+
+
+/* ── Animated Gradient Text ──────────────────────────────────────── */
+/*
+.lcms-gradient-text {
+  background: linear-gradient(90deg, #0071e3, #34c759, #ff9f0a, #ff375f);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 5s ease infinite;
+}
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+*/
+
+
+/* ── Blur Fade In ────────────────────────────────────────────────── */
+/*
+.lcms-blur-fade {
+  animation: blur-fade-in 0.6s ease forwards;
+  opacity: 0;
+}
+@keyframes blur-fade-in {
+  from { opacity: 0; filter: blur(12px); transform: translateY(8px); }
+  to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+}
+*/
