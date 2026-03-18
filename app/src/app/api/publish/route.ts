@@ -508,7 +508,7 @@ function buildIndexHtml(posts: PublishedPostRow[]): string {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LuminaCMS</title>
+    <title>K.S.H_LuminaCMS</title>
     <style>${css}</style>
   </head>
   <body>
@@ -525,7 +525,7 @@ function buildIndexHtml(posts: PublishedPostRow[]): string {
 
     <section class="hero">
       <div class="hero-card">
-        <div class="hero-kicker">LuminaCMS</div>
+        <div class="hero-kicker">K.S.H_LuminaCMS</div>
         <h1 class="hero-title">已發布文章</h1>
         <p class="hero-sub">以下內容來自本機資料庫中「已發布」的文章清單。點擊卡片即可開啟。</p>
       </div>
