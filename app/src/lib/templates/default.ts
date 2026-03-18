@@ -184,10 +184,76 @@ export function getMinimalCss(): string {
   `.trim();
 }
 
+// ─── Background Templates (純 CSS；用於 Template 選項) ─────────────────────────
+
+export function getRetroGridTemplateCss(): string {
+  const extra = `
+    :root{
+      --bg-body:#070a0f;
+      --bg-card:#0b1220;
+      --fg-primary:#e5e7eb;
+      --fg-secondary:#94a3b8;
+      --accent:#38bdf8;
+      --shadow-card:0 18px 60px rgba(0,0,0,0.55);
+    }
+    body{
+      background: radial-gradient(1100px 420px at 50% -10%, rgba(56,189,248,0.18), transparent 60%),
+                  radial-gradient(900px 360px at 15% 12%, rgba(34,197,94,0.10), transparent 55%),
+                  var(--bg-body);
+    }
+    body::after{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:0.55;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,0.14) 1px, transparent 0),
+        linear-gradient(to bottom, rgba(255,255,255,0.14) 1px, transparent 0);
+      background-size:64px 64px;
+      transform: perspective(220px) rotateX(65deg) translateY(-55%);
+      transform-origin: 50% 0%;
+      animation: lcms-retrogrid-scroll 15s linear infinite;
+      mix-blend-mode:screen;
+    }
+    @keyframes lcms-retrogrid-scroll{
+      from{transform: perspective(220px) rotateX(65deg) translateY(-55%)}
+      to{transform: perspective(220px) rotateX(65deg) translateY(-10%)}
+    }
+  `.trim();
+  return `${getDarkCss()}\n\n${extra}`.trim();
+}
+
+export function getFlickeringGridTemplateCss(): string {
+  const extra = `
+    body{
+      background:
+        radial-gradient(circle at 1px 1px, rgba(0,0,0,0.12) 1px, transparent 0) 0 0/10px 10px,
+        linear-gradient(180deg, rgba(245,245,247,1), rgba(255,255,255,1));
+    }
+    body::after{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 10% 30%, rgba(0,0,0,0.06), transparent 35%),
+        radial-gradient(circle at 70% 60%, rgba(0,0,0,0.05), transparent 38%);
+      animation: lcms-flicker 1.8s steps(2,end) infinite;
+      opacity:0.9;
+      mix-blend-mode:multiply;
+    }
+    @keyframes lcms-flicker{50%{opacity:0.55}}
+  `.trim();
+  return `${getDefaultCss()}\n\n${extra}`.trim();
+}
+
 // ─── HTML 骨架（含 {{CSS}} / {{TITLE}} / {{CONTENT}} / {{DATE}} 佔位符）────────
 
 export function getTemplateShell(cssContent?: string): string {
   const css = cssContent ?? getDefaultCss();
+  const layoutFix = `
+    html, body { min-height: 100%; }
+    body { min-height: 100vh; background-color: var(--bg-body); }
+  `.trim();
   return `<!DOCTYPE html>
 <html lang="zh-Hant">
   <head>
@@ -196,6 +262,7 @@ export function getTemplateShell(cssContent?: string): string {
     <title>{{TITLE}}</title>
     <style>
 ${css}
+${layoutFix}
     </style>
   </head>
   <body>

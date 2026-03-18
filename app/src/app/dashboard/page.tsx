@@ -30,6 +30,15 @@ const NAV_CARDS = [
     border: "border-emerald-100",
     iconBg: "bg-emerald-100",
   },
+  {
+    href: "/",
+    icon: "🏠",
+    title: "前往首頁",
+    desc: "查看 LuminaCMS 首頁與已發布文章",
+    accent: "from-amber-50 to-yellow-50",
+    border: "border-amber-100",
+    iconBg: "bg-amber-100",
+  },
 ] as const;
 
 export default async function DashboardPage() {

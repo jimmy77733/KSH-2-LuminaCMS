@@ -10,6 +10,8 @@ type PostRow = {
   slug: string;
   title: string;
   createdAt: string;
+  publishedUrl: string | null;
+  publishedAt: string | null;
 };
 
 function formatDate(raw: string) {
@@ -27,7 +29,7 @@ function formatDate(raw: string) {
 export default function PostsPage() {
   const posts = db
     .prepare(
-      `SELECT id, slug, title, createdAt
+      `SELECT id, slug, title, createdAt, publishedUrl, publishedAt
        FROM Post
        ORDER BY rowid DESC`,
     )
@@ -89,16 +91,47 @@ export default function PostsPage() {
                   <p className="mt-0.5 text-xs text-zinc-400">
                     {formatDate(post.createdAt)} · /{post.slug}
                   </p>
+                  {post.publishedUrl && (
+                    <div className="mt-1">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                          🌐 已發布
+                        </span>
+                        <a
+                          href={post.publishedUrl}
+                          {...(post.publishedUrl.startsWith("http")
+                            ? { target: "_blank", rel: "noopener noreferrer" }
+                            : {})}
+                          aria-label="開啟已發布網頁"
+                          title="開啟已發布網頁"
+                          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-emerald-700/80 ring-1 ring-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
+                        >
+                          ↗
+                        </a>
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* 操作按鈕 */}
                 <div className="flex shrink-0 items-center gap-1">
-                  <Link
-                    href={`/dashboard/posts/preview/${post.id}`}
-                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-sky-600 hover:bg-sky-50"
-                  >
-                    查看
-                  </Link>
+                  {post.publishedUrl ? (
+                    <a
+                      href={post.publishedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-50"
+                    >
+                      查看
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/dashboard/posts/preview/${post.id}`}
+                      className="rounded-lg px-3 py-1.5 text-xs font-medium text-sky-600 hover:bg-sky-50"
+                    >
+                      查看
+                    </Link>
+                  )}
                   <Link
                     href={`/dashboard/posts/edit/${post.id}`}
                     className="rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100"
@@ -107,7 +140,7 @@ export default function PostsPage() {
                   </Link>
                   <DownloadHtmlButton id={post.id} title={post.title} slug={post.slug} />
                   <PackAssetsButton id={post.id} title={post.title} />
-                  <PublishButton id={post.id} title={post.title} />
+                  <PublishButton id={post.id} title={post.title} publishedUrl={post.publishedUrl ?? undefined} publishedAt={post.publishedAt ?? undefined} />
                   <DeleteButton id={post.id} title={post.title} />
                 </div>
               </div>

@@ -56,6 +56,11 @@ module.exports = {
       from: "public",
       to: "nextjs/public",
     },
+    {
+      // 初始 SQLite 資料庫（含最新 schema），提供首次開啟直接可用
+      from: "dev.db",
+      to: "nextjs/dev.db",
+    },
   ],
 
   // ── Windows 設定 ───────────────────────────────────────────────────────────

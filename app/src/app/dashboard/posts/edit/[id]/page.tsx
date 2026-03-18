@@ -9,6 +9,10 @@ import {
   TextComponent,
   ImageComponent,
   MorphingTextComponent,
+  TerminalComponent,
+  ScrolltextComponent,
+  RetroGridComponent,
+  FlickeringGridComponent,
   TEXT_PRESETS,
   CONTAINER_PRESETS,
 } from "@/components/editor/UserComponents";
@@ -128,7 +132,9 @@ function TopToolbarContent({
               disabled={!selectedNodeId}
               onClick={() => {
                 if (!selectedNodeId) return;
-                actions.setProp(selectedNodeId, (p: any) => { Object.assign(p, def.props); });
+                actions.setProp(selectedNodeId, (p: Record<string, unknown>) => {
+                  Object.assign(p, def.props as unknown as Record<string, unknown>);
+                });
               }}
               className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-zinc-700 ring-1 ring-black/8 transition hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -151,7 +157,9 @@ function TopToolbarContent({
               disabled={!selectedNodeId}
               onClick={() => {
                 if (!selectedNodeId) return;
-                actions.setProp(selectedNodeId, (p: any) => { p.variant = key; });
+                actions.setProp(selectedNodeId, (p: { variant?: string }) => {
+                  p.variant = key;
+                });
               }}
               className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-zinc-700 ring-1 ring-black/8 transition hover:bg-zinc-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -176,7 +184,9 @@ function SidebarToolset() {
     { label: "文字區塊", icon: "T", el: () => <TextComponent text="雙擊編輯文字" fontSize={16} color="#111111" weight="normal" /> },
     { label: "圖片區塊", icon: "⬜", el: () => <ImageComponent src="" alt="" borderStyle="ios-inset" /> },
     { label: "容器區塊", icon: "▭", el: () => <Container padding={24} variant="default" /> },
-    { label: "✦ 變形文字", icon: "✦", el: () => <MorphingTextComponent texts={"LuminaCMS\n創意無限\n自由排版"} fontSize={40} color="#111111" align="center" /> },
+    { label: "變形文字(Morphing)", icon: "✦", el: () => <MorphingTextComponent texts={"LuminaCMS\n創意無限\n自由排版"} fontSize={40} color="#111111" align="center" /> },
+    { label: "終端機（Terminal）", icon: "⌘", el: () => <TerminalComponent lines={"$ npm install\n$ npm run dev\nReady"} /> },
+    { label: "跑馬燈（Scrolltext）", icon: "≋", el: () => <ScrolltextComponent text="LuminaCMS · Scrolltext · CSS FX" baseVelocity={6} direction={1} /> },
   ];
 
   return (
@@ -399,7 +409,7 @@ export default function EditPostPage() {
   const sidebarTop = toolbarOpen ? "top-[124px]" : "top-[72px]";
 
   return (
-    <Editor resolver={{ Container, TextComponent, ImageComponent, CanvasContainer, MorphingTextComponent }}>
+    <Editor resolver={{ Container, TextComponent, ImageComponent, CanvasContainer, MorphingTextComponent, TerminalComponent, ScrolltextComponent, RetroGridComponent, FlickeringGridComponent }}>
       <main className="flex min-h-screen flex-col bg-[#F5F5F7]">
         <KeyboardHandler />
 

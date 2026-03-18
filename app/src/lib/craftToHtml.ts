@@ -17,6 +17,10 @@
 
 type RegistryKey =
   | "MorphingTextComponent"
+  | "TerminalComponent"
+  | "ScrolltextComponent"
+  | "RetroGridComponent"
+  | "FlickeringGridComponent"
   // 未來擴充：在此新增類型
   // | "ShimmerButton"
   // | "Particles"
@@ -49,6 +53,77 @@ const COMPONENT_STYLE_REGISTRY: Partial<Record<RegistryKey, RegistryEntry>> = {
     </filter>
   </defs>
 </svg>`,
+  },
+
+  TerminalComponent: {
+    css: `
+      .lcms-terminal{
+        border-radius:16px;
+        border:1px solid rgba(0,0,0,0.08);
+        background:#ffffff;
+        box-shadow:0 10px 30px rgba(0,0,0,0.06);
+        overflow:hidden;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+      .lcms-terminal-head{display:flex;gap:8px;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.06);background:rgba(245,245,247,0.8)}
+      .lcms-dot{width:9px;height:9px;border-radius:999px}
+      .lcms-dot.r{background:#ef4444}.lcms-dot.y{background:#f59e0b}.lcms-dot.g{background:#22c55e}
+      .lcms-terminal-body{padding:14px 16px;font-size:13px;line-height:1.6;color:#111}
+      .lcms-terminal-line{white-space:pre-wrap;word-break:break-word}
+    `.trim(),
+  },
+
+  ScrolltextComponent: {
+    css: `
+      .lcms-scrolltext{position:relative;overflow:hidden;white-space:nowrap;border-radius:14px;border:1px solid rgba(0,0,0,0.06);background:#fff;box-shadow:0 6px 20px rgba(0,0,0,0.05)}
+      .lcms-scrolltext-track{display:inline-flex;align-items:center;will-change:transform}
+      @keyframes lcms-marquee-left{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+      @keyframes lcms-marquee-right{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+    `.trim(),
+  },
+
+  RetroGridComponent: {
+    css: `
+      .lcms-retrogrid{
+        position:relative;overflow:hidden;border-radius:24px;
+        background: radial-gradient(1200px 400px at 50% 0%, rgba(56,189,248,0.22), transparent 60%),
+                    linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.65));
+      }
+      .lcms-retrogrid::before{
+        content:"";position:absolute;inset:-40% -80%;
+        background-image:
+          linear-gradient(to right, rgba(255,255,255,0.16) 1px, transparent 0),
+          linear-gradient(to bottom, rgba(255,255,255,0.16) 1px, transparent 0);
+        background-size:64px 64px;
+        transform: perspective(220px) rotateX(65deg) translateY(-40%);
+        animation: lcms-retrogrid-scroll 15s linear infinite;
+        opacity:0.55;
+      }
+      @keyframes lcms-retrogrid-scroll{
+        from{transform: perspective(220px) rotateX(65deg) translateY(-55%)}
+        to{transform: perspective(220px) rotateX(65deg) translateY(-10%)}
+      }
+    `.trim(),
+  },
+
+  FlickeringGridComponent: {
+    css: `
+      .lcms-flickergrid{
+        position:relative;overflow:hidden;border-radius:24px;
+        background:
+          radial-gradient(circle at 1px 1px, rgba(0,0,0,0.14) 1px, transparent 0) 0 0/10px 10px,
+          linear-gradient(180deg, rgba(255,255,255,0.75), rgba(255,255,255,0.9));
+      }
+      .lcms-flickergrid::after{
+        content:"";position:absolute;inset:0;
+        background: radial-gradient(circle at 10% 30%, rgba(0,0,0,0.08), transparent 35%),
+                    radial-gradient(circle at 70% 60%, rgba(0,0,0,0.06), transparent 38%);
+        animation: lcms-flicker 1.8s steps(2,end) infinite;
+        opacity:0.9;
+        mix-blend-mode:multiply;
+      }
+      @keyframes lcms-flicker{50%{opacity:0.55}}
+    `.trim(),
   },
 
   // ── 未來擴充預留位置 ─────────────────────────────────────────────────────
@@ -227,6 +302,56 @@ ${spanTags}
       }
 
       return `<div style="${boxStyle}">${children}</div>`;
+    }
+
+    case "TerminalComponent": {
+      const pp = p as Record<string, unknown>;
+      const raw = String(pp.lines ?? "");
+      const lines = raw
+        .split("\n")
+        .map((t: string) => t.replace(/\r/g, ""))
+        .filter(Boolean);
+      const body = lines
+        .map((line: string) => `<div class="lcms-terminal-line">${esc(line)}</div>`)
+        .join("");
+      return `<div class="lcms-terminal" style="margin:14px 0">
+  <div class="lcms-terminal-head">
+    <span class="lcms-dot r"></span><span class="lcms-dot y"></span><span class="lcms-dot g"></span>
+  </div>
+  <div class="lcms-terminal-body">${body}</div>
+</div>`;
+    }
+
+    case "ScrolltextComponent": {
+      const pp = p as Record<string, unknown>;
+      const text = esc(pp.text ?? "LuminaCMS · Scrolltext");
+      const baseVelocity = Number(pp.baseVelocity ?? 6);
+      const direction = Number(pp.direction ?? 1) === -1 ? -1 : 1;
+      const seconds = Math.max(
+        6,
+        Math.round(24 - Math.min(20, Math.max(0, baseVelocity))),
+      );
+      const anim = direction === -1 ? "lcms-marquee-right" : "lcms-marquee-left";
+      return `<div class="lcms-scrolltext" style="margin:14px 0;padding:10px 0">
+  <div class="lcms-scrolltext-track" style="animation:${anim} ${seconds}s linear infinite">
+    <span style="padding:0 24px;font-weight:700;font-size:14px;color:#111">${text}</span>
+    <span style="padding:0 24px;font-weight:700;font-size:14px;color:#111">${text}</span>
+    <span style="padding:0 24px;font-weight:700;font-size:14px;color:#111">${text}</span>
+    <span style="padding:0 24px;font-weight:700;font-size:14px;color:#111">${text}</span>
+  </div>
+</div>`;
+    }
+
+    case "RetroGridComponent": {
+      const pp = p as Record<string, unknown>;
+      const h = Number(pp.height ?? 220);
+      return `<div class="lcms-retrogrid" style="height:${Math.max(120, Math.min(900, h))}px;margin:14px 0"></div>`;
+    }
+
+    case "FlickeringGridComponent": {
+      const pp = p as Record<string, unknown>;
+      const h = Number(pp.height ?? 220);
+      return `<div class="lcms-flickergrid" style="height:${Math.max(120, Math.min(900, h))}px;margin:14px 0"></div>`;
     }
 
     // CanvasContainer / Root Canvas — 透明容器

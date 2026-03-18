@@ -3,6 +3,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, useNode } from "@craftjs/core";
 import { MorphingText } from "@/components/ui/MorphingText";
+import { Terminal } from "@/components/ui/terminalCSS";
+import {
+  ScrollVelocityContainer,
+  ScrollVelocityRow,
+} from "@/components/ui/Scrolltext";
+import { FlickeringGrid } from "@/lib/templates/flickeringGrid";
+import { RetroGrid } from "@/lib/templates/RetroGrid";
 
 // ─── NodeOverlay：選取外框 + 右上角紅叉刪除 ─────────────────────────────────
 const NodeOverlay = ({
@@ -70,7 +77,7 @@ export const TEXT_PRESETS: Record<
   },
 };
 
-export const TextComponent: React.FC<TextProps> & { craft?: any } = (
+export const TextComponent: React.FC<TextProps> & { craft?: unknown } = (
   props,
 ) => {
   const {
@@ -175,7 +182,9 @@ const FloatingToolbar: React.FC = () => {
   const props = selected.data.props as TextProps;
 
   const update = (patch: Partial<TextProps>) =>
-    actions.setProp(id, (p: any) => Object.assign(p, patch));
+    actions.setProp(id, (p: Record<string, unknown>) => {
+      Object.assign(p, patch as unknown as Record<string, unknown>);
+    });
 
   return (
     <div className="absolute -top-9 left-0 z-50 flex items-center gap-1 rounded-full bg-black/80 px-2 py-1 text-[11px] text-white shadow-xl backdrop-blur-sm">
@@ -271,7 +280,7 @@ const IMAGE_BORDER_STYLES: Record<
   },
 };
 
-export const ImageComponent: React.FC<ImageProps> & { craft?: any } = (
+export const ImageComponent: React.FC<ImageProps> & { craft?: unknown } = (
   props,
 ) => {
   const {
@@ -288,19 +297,26 @@ export const ImageComponent: React.FC<ImageProps> & { craft?: any } = (
   const borderStyle: ImageBorderStyle = props.borderStyle ?? "ios-inset";
   const borderDef = IMAGE_BORDER_STYLES[borderStyle];
 
-  useEffect(() => {
-    if (!selected) {
+  const togglePicker = async () => {
+    if (!selected) return;
+    if (showPicker) {
       setShowPicker(false);
       return;
     }
-    if (!showPicker) return;
+    setShowPicker(true);
+    // 只在第一次開啟時抓取清單（避免每次點開都打 API）
+    if (mediaItems.length > 0) return;
     setLoadingMedia(true);
-    fetch("/api/media")
-      .then((r) => r.json())
-      .then((data) => setMediaItems(data))
-      .catch(() => {})
-      .finally(() => setLoadingMedia(false));
-  }, [selected, showPicker]);
+    try {
+      const res = await fetch("/api/media");
+      const data = (await res.json()) as MediaPickerItem[];
+      setMediaItems(data);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingMedia(false);
+    }
+  };
 
   const applyMedia = (item: MediaPickerItem) => {
     setProp((p: ImageProps) => {
@@ -370,7 +386,7 @@ export const ImageComponent: React.FC<ImageProps> & { craft?: any } = (
           </div>
           <button
             type="button"
-            onClick={() => setShowPicker((prev) => !prev)}
+            onClick={() => { void togglePicker(); }}
             className="absolute bottom-2 right-2 z-10 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-black/90"
           >
             {showPicker ? "關閉媒體庫" : "選擇圖片"}
@@ -452,7 +468,7 @@ export const CONTAINER_PRESETS: Record<
   },
 };
 
-export const Container: React.FC<ContainerProps> & { craft?: any } = (
+export const Container: React.FC<ContainerProps> & { craft?: unknown } = (
   props,
 ) => {
   const {
@@ -517,7 +533,7 @@ type MorphingTextComponentProps = {
 };
 
 export const MorphingTextComponent: React.FC<MorphingTextComponentProps> & {
-  craft?: any;
+  craft?: unknown;
 } = (props) => {
   const {
     id: nodeId,
@@ -603,6 +619,319 @@ MorphingTextComponent.craft = {
     color: "#111111",
     align: "center",
   },
+};
+
+// ===== TerminalComponent =====
+
+type TerminalComponentProps = {
+  lines: string; // 每行一筆（換行分隔）
+};
+
+export const TerminalComponent: React.FC<TerminalComponentProps> & {
+  craft?: unknown;
+} = (props) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const lines = String(props.lines ?? "")
+    .split("\n")
+    .map((t) => t.replace(/\r/g, ""))
+    .filter((t) => t.length > 0);
+
+  return (
+    <div
+      ref={(ref) => {
+        if (ref) connect(drag(ref));
+      }}
+      className="relative my-4 w-full"
+    >
+      {selected ? (
+        <div className="rounded-2xl border-2 border-dashed border-sky-300 bg-sky-50/50 p-4">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-sky-500">
+            Terminal 編輯模式 — 每行一個指令/輸出
+          </p>
+          <textarea
+            className="w-full resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+            rows={Math.max(4, lines.length + 1)}
+            value={props.lines}
+            onChange={(e) =>
+              setProp((p: TerminalComponentProps) => {
+                p.lines = e.target.value;
+              })
+            }
+            placeholder={"npm install\nnpm run dev\n..."}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          />
+          <p className="mt-2 text-[10px] text-sky-400">
+            ✦ 點擊畫布空白處即可回到預覽效果
+          </p>
+        </div>
+      ) : (
+        <Terminal sequence={false} className="mx-auto">
+          {lines.map((line, i) => (
+            <div key={i} className="text-zinc-700">
+              {line}
+            </div>
+          ))}
+        </Terminal>
+      )}
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-2xl" />}
+    </div>
+  );
+};
+
+TerminalComponent.craft = {
+  displayName: "Terminal",
+  props: {
+    lines: "$ npm install\n$ npm run dev\nServer ready on http://localhost:3000",
+  },
+};
+
+// ===== ScrolltextComponent =====
+
+type ScrolltextComponentProps = {
+  text: string;
+  baseVelocity: number; // 0~20 建議
+  direction: 1 | -1;
+};
+
+export const ScrolltextComponent: React.FC<ScrolltextComponentProps> & {
+  craft?: unknown;
+} = (props) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const text = String(props.text ?? "LuminaCMS · Scrolltext");
+  const baseVelocity = Number.isFinite(props.baseVelocity)
+    ? props.baseVelocity
+    : 6;
+  const direction = props.direction === -1 ? -1 : 1;
+
+  return (
+    <div
+      ref={(ref) => {
+        if (ref) connect(drag(ref));
+      }}
+      className="relative my-4 w-full overflow-hidden rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5"
+    >
+      {selected && (
+        <div className="mb-3 grid gap-2 rounded-xl border border-sky-200 bg-sky-50 p-3">
+          <div className="grid gap-1">
+            <label className="text-[11px] font-semibold text-sky-700">
+              文字
+            </label>
+            <input
+              className="w-full rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs text-zinc-900 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+              value={text}
+              onChange={(e) =>
+                setProp((p: ScrolltextComponentProps) => {
+                  p.text = e.target.value;
+                })
+              }
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-1">
+              <label className="text-[11px] font-semibold text-sky-700">
+                速度
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={20}
+                step={1}
+                className="w-full rounded-lg border border-sky-200 bg-white px-3 py-2 text-xs text-zinc-900 outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                value={baseVelocity}
+                onChange={(e) =>
+                  setProp((p: ScrolltextComponentProps) => {
+                    p.baseVelocity = Number(e.target.value || 0);
+                  })
+                }
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className="grid gap-1">
+              <label className="text-[11px] font-semibold text-sky-700">
+                方向
+              </label>
+              <div className="flex gap-1">
+                {([1, -1] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    className={`flex-1 rounded-lg px-2 py-2 text-xs font-medium transition ${
+                      direction === d
+                        ? "bg-sky-500 text-white"
+                        : "bg-white text-zinc-600 ring-1 ring-black/10 hover:bg-zinc-50"
+                    }`}
+                    onClick={() =>
+                      setProp((p: ScrolltextComponentProps) => {
+                        p.direction = d;
+                      })
+                    }
+                  >
+                    {d === 1 ? "→" : "←"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ScrollVelocityContainer>
+        <ScrollVelocityRow
+          baseVelocity={Math.max(0, baseVelocity)}
+          direction={direction}
+          className="py-1"
+        >
+          <span className="px-6 text-sm font-semibold text-zinc-900">
+            {text}
+          </span>
+        </ScrollVelocityRow>
+      </ScrollVelocityContainer>
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-2xl" />}
+    </div>
+  );
+};
+
+ScrolltextComponent.craft = {
+  displayName: "Scrolltext",
+  props: { text: "LuminaCMS · Scrolltext · CSS FX", baseVelocity: 6, direction: 1 },
+};
+
+// ===== Background FX Components (RetroGrid / FlickeringGrid / Ripple) =====
+
+type FxBoxProps = {
+  height: number;
+};
+
+export const RetroGridComponent: React.FC<FxBoxProps> & { craft?: unknown } = (
+  props,
+) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const height = Number.isFinite(props.height) ? props.height : 220;
+
+  return (
+    <div
+      ref={(ref) => {
+        if (ref) connect(drag(ref));
+      }}
+      className="relative my-4 w-full overflow-hidden rounded-3xl bg-zinc-950 ring-1 ring-white/10"
+      style={{ height }}
+    >
+      <RetroGrid opacity={0.45} lightLineColor="rgba(0,0,0,0.25)" darkLineColor="rgba(255,255,255,0.22)" />
+      <div className="relative z-10 flex h-full items-center justify-center">
+        <p className="text-sm font-semibold text-white/90">RetroGrid</p>
+      </div>
+
+      {selected && (
+        <div className="absolute left-3 top-3 z-20 rounded-xl bg-white/90 px-3 py-2 text-[11px] text-zinc-700 shadow ring-1 ring-black/10 backdrop-blur">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">高度</span>
+            <input
+              type="number"
+              min={120}
+              max={640}
+              className="w-20 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={height}
+              onChange={(e) =>
+                setProp((p: FxBoxProps) => {
+                  p.height = Number(e.target.value || 220);
+                })
+              }
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-3xl" />}
+    </div>
+  );
+};
+
+RetroGridComponent.craft = {
+  displayName: "RetroGrid",
+  props: { height: 220 },
+};
+
+export const FlickeringGridComponent: React.FC<FxBoxProps> & { craft?: unknown } = (
+  props,
+) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const height = Number.isFinite(props.height) ? props.height : 220;
+
+  return (
+    <div
+      ref={(ref) => {
+        if (ref) connect(drag(ref));
+      }}
+      className="relative my-4 w-full overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5"
+      style={{ height }}
+    >
+      <FlickeringGrid className="absolute inset-0" maxOpacity={0.22} />
+      <div className="relative z-10 flex h-full items-center justify-center">
+        <p className="text-sm font-semibold text-zinc-800">FlickeringGrid</p>
+      </div>
+
+      {selected && (
+        <div className="absolute left-3 top-3 z-20 rounded-xl bg-white/90 px-3 py-2 text-[11px] text-zinc-700 shadow ring-1 ring-black/10 backdrop-blur">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">高度</span>
+            <input
+              type="number"
+              min={120}
+              max={640}
+              className="w-20 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={height}
+              onChange={(e) =>
+                setProp((p: FxBoxProps) => {
+                  p.height = Number(e.target.value || 220);
+                })
+              }
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-3xl" />}
+    </div>
+  );
+};
+
+FlickeringGridComponent.craft = {
+  displayName: "FlickeringGrid",
+  props: { height: 220 },
 };
 
 // ===== CanvasContainer（Root 畫布純容器）=====
