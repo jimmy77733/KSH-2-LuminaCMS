@@ -274,3 +274,37 @@ export function craftJsonToHtml(contentJson: string): string {
     return "";
   }
 }
+
+/**
+ * 將 HTML 中的本地圖片路徑（/uploads/...）重寫為 GitHub Pages 的絕對路徑。
+ *
+ * 背景：
+ *   本地開發時圖片路徑為 /uploads/year/month/file.webp（相對根目錄）。
+ *   GitHub Pages 的根路徑是 /{repoName}/，所以圖片應改為 /{repoName}/uploads/...。
+ *   若 repoName 為空字串，則保持原路徑不變（適用於根域名部署）。
+ *
+ * @param html     - 待處理的 HTML 字串（通常是完整的 htmlSnapshot）
+ * @param repoName - GitHub 倉庫名稱，例如 "my-blog"
+ * @returns        - 路徑已修正的 HTML 字串
+ *
+ * @example
+ *   rewriteImagePathsForGitHubPages(html, "my-blog")
+ *   // /uploads/2025/01/img.webp → /my-blog/uploads/2025/01/img.webp
+ */
+export function rewriteImagePathsForGitHubPages(
+  html: string,
+  repoName: string,
+): string {
+  if (!repoName || !html) return html;
+
+  // 清理 repoName，去掉多餘的斜線
+  const repo = repoName.replace(/^\/+|\/+$/g, "");
+  if (!repo) return html;
+
+  // 替換 src="/uploads/..." 和 srcset="/uploads/..."
+  // 僅匹配以 /uploads/ 開頭的路徑（避免誤改已包含 repo 前綴的路徑）
+  return html.replace(
+    /(src|srcset)="(\/uploads\/)/g,
+    `$1="/${repo}/uploads/`,
+  );
+}

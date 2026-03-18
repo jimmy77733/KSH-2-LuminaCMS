@@ -226,6 +226,17 @@ export default function PublishProgressModal({ postId, title, onClose }: Props) 
                   同步 {result.imageCount} 張圖片
                 </p>
               )}
+
+              {/* GitHub Pages 首次使用提示 */}
+              <div className="mt-1 flex items-start gap-1.5 rounded-xl bg-amber-50 px-2.5 py-2 ring-1 ring-amber-200/60">
+                <span className="shrink-0 text-amber-500 mt-0.5">⚠</span>
+                <p className="text-[11px] leading-snug text-amber-700">
+                  <span className="font-semibold">首次發布提示：</span>若出現 404，請至{" "}
+                  <span className="font-mono">GitHub Settings › Pages</span>{" "}
+                  將來源設定為 <span className="font-mono">main</span> 分支，
+                  等待 1-2 分鐘後即可存取。
+                </p>
+              </div>
             </div>
           )}
 

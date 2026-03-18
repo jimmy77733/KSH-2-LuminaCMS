@@ -1,13 +1,20 @@
 {
-  "name": "app",
-  "version": "0.1.0",
+  "name": "luminacms",
+  "version": "1.0.0",
   "private": true,
+  "description": "LuminaCMS — 極美感個人離線內容管理系統",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "node prisma/seed.cjs"
+    "db:seed": "node prisma/seed.cjs",
+    "electron:dev": "electron electron/main.js",
+    "electron:build": "next build && node scripts/copy-standalone.js && electron-builder",
+    "electron:build:win": "next build && node scripts/copy-standalone.js && electron-builder --win",
+    "electron:build:mac": "next build && node scripts/copy-standalone.js && electron-builder --mac",
+    "electron:build:linux": "next build && node scripts/copy-standalone.js && electron-builder --linux"
   },
   "dependencies": {
     "@craftjs/core": "^0.2.12",
@@ -30,6 +37,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.7",
     "tailwindcss": "^4",
