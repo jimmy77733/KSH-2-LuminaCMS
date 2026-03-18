@@ -123,5 +123,43 @@ html, body { min-height: 100%; }
         </section>
       </article>
     </div>
-  </body>
+  <style>
+  .lcms-home-btn{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    z-index:999;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:10px 14px;
+    border-radius:999px;
+    text-decoration:none;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:0.01em;
+    color:#111;
+    background:rgba(255,255,255,0.78);
+    border:1px solid rgba(0,0,0,0.08);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 10px 30px rgba(0,0,0,0.10);
+  }
+  .lcms-home-btn:hover{
+    background:rgba(255,255,255,0.92);
+  }
+  @media (prefers-color-scheme: dark){
+    .lcms-home-btn{
+      color:#f5f5f7;
+      background:rgba(20,20,22,0.62);
+      border:1px solid rgba(255,255,255,0.10);
+      box-shadow:0 14px 40px rgba(0,0,0,0.40);
+    }
+    .lcms-home-btn:hover{
+      background:rgba(20,20,22,0.78);
+    }
+  }
+</style>
+<a class="lcms-home-btn" href="https://jimmy77733.github.io/KSH-2-LuminaCMS/" aria-label="返回首頁" title="返回首頁">← 返回首頁</a>
+</body>
 </html>
