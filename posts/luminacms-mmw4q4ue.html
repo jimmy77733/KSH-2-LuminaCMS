@@ -260,6 +260,7 @@
     }
 html, body { min-height: 100%; }
     body { min-height: 100vh; background-color: var(--bg-body); }
+
     </style>
   </head>
   <body>
@@ -270,20 +271,42 @@ html, body { min-height: 100%; }
       </header>
       <article class="lcms-card">
         <div class="lcms-meta">
-          <span>2026-03-18</span>
+          <span>2026-03-20</span>
           <span class="lcms-meta-dot"></span>
           <span>LuminaCMS</span>
         </div>
         <h1 class="lcms-title">測試4</h1>
         <section class="lcms-content">
-          <svg id="lcms-morph-filter" style="position:fixed;height:0;width:0;pointer-events:none;overflow:hidden" aria-hidden="true">
-  <defs>
-    <filter id="lcms-threshold">
-      <feColorMatrix in="SourceGraphic" type="matrix"
-        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140"/>
-    </filter>
-  </defs>
-</svg>
+          <style>.lcms-stepper{
+        border-radius:24px;overflow:hidden;margin:14px 0;
+        border:1px solid #27272a;background:#fff;
+        box-shadow:0 8px 30px rgba(0,0,0,0.06);
+        max-width:480px;
+      }
+      .lcms-stepper-head{
+        display:flex;align-items:center;gap:0;padding:20px 20px 0;
+      }
+      .lcms-step-circle{
+        width:30px;height:30px;border-radius:50%;
+        display:flex;align-items:center;justify-content:center;
+        font-size:12px;font-weight:700;flex-shrink:0;
+        background:#5227FF;color:#fff;
+      }
+      .lcms-step-circle.done{background:#5227FF}
+      .lcms-step-circle.inactive{background:#222;color:#a3a3a3}
+      .lcms-step-line{flex:1;height:2px;background:#52525b;margin:0 6px}
+      .lcms-step-line.done{background:#5227FF}
+      .lcms-stepper-body{padding:20px}
+      .lcms-stepper-title{font-size:16px;font-weight:700;margin:0 0 8px}
+      .lcms-stepper-text{font-size:13px;color:#666;margin:0}
+      .lcms-stepper-footer{
+        display:flex;justify-content:flex-end;gap:8px;padding:0 20px 20px;
+      }
+      .lcms-stepper-btn{
+        border-radius:999px;background:#5227FF;color:#fff;
+        font-size:13px;font-weight:500;padding:6px 18px;border:none;cursor:pointer;
+      }
+      .lcms-stepper-btn:disabled{background:#e5e7eb;color:#6b7280;cursor:default;}</style>
 <style>.lcms-terminal{
         border-radius:16px;
         border:1px solid rgba(0,0,0,0.08);
@@ -298,17 +321,25 @@ html, body { min-height: 100%; }
       .lcms-terminal-body{padding:14px 16px;font-size:13px;line-height:1.6;color:#111}
       .lcms-terminal-line{white-space:pre-wrap;word-break:break-word}</style>
 <div style="padding:24px;border-radius:24px;margin:12px 0;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08);"><p style="font-size:28px;color:#111111;font-weight:700;margin:0.4em 0;line-height:1.6">新的 LuminaCMS 文章</p>
-<p style="font-size:16px;color:#6e6e73;font-weight:400;margin:0.4em 0;line-height:1.6">在這裡開始撰寫你的內容…</p>
-<style>
-@keyframes mt_jf700k_show{0%{opacity:0;filter:blur(14px)}6.67%{opacity:1;filter:blur(0)}23.33%{opacity:1;filter:blur(0)}30.00%{opacity:0;filter:blur(14px)}33.33%,100%{opacity:0;filter:blur(14px)}}
-.mt_jf700k{position:relative;height:60px;margin:0.8em 0;text-align:center;filter:url(#lcms-threshold) blur(0.5px);}
-.mt_jf700k span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700;color:#111111;line-height:1;opacity:0;animation:mt_jf700k_show 7.5s ease-in-out infinite;}
-</style>
-<div class="mt_jf700k" aria-label="LuminaCMS / 創意無限 / 自由排版">
-<span style="animation-delay:0.00s">LuminaCMS</span>
-<span style="animation-delay:2.50s">創意無限</span>
-<span style="animation-delay:5.00s">自由排版</span>
+<p style="font-size:16px;color:#111111;font-weight:400;margin:0.4em 0;line-height:1.6">雙擊編輯文字</p>
+<div class="lcms-stepper">
+  <div class="lcms-stepper-head">
+    <div class="lcms-step-circle" id="stihaqrj-c0">1</div>
+    <div class="lcms-step-line" id="stihaqrj-l0"></div>
+    <div class="lcms-step-circle inactive" id="stihaqrj-c1">2</div>
+    <div class="lcms-step-line" id="stihaqrj-l1"></div>
+    <div class="lcms-step-circle inactive" id="stihaqrj-c2">3</div>
+  </div>
+  <div class="lcms-stepper-body">
+    <h4 class="lcms-stepper-title" id="stihaqrj-t">123</h4>
+    <p class="lcms-stepper-text" id="stihaqrj-s">步驟 1 / 3</p>
+  </div>
+  <div class="lcms-stepper-footer">
+    <button class="lcms-stepper-btn" id="stihaqrj-bk" disabled>上一步</button>
+    <button class="lcms-stepper-btn" id="stihaqrj-nx">繼續 →</button>
+  </div>
 </div>
+<script>(function(){var steps=["123","456","789"];var uid='stihaqrj';var cur=0;function render(){var t=document.getElementById(uid+'-t');var s=document.getElementById(uid+'-s');if(t)t.textContent=steps[cur];if(s)s.textContent='步驟 '+(cur+1)+' / '+steps.length;for(var i=0;i<steps.length;i++){var c=document.getElementById(uid+'-c'+i);if(!c)continue;if(i<cur){c.className='lcms-step-circle done';c.textContent='\u2713';}else if(i===cur){c.className='lcms-step-circle';c.textContent=String(i+1);}else{c.className='lcms-step-circle inactive';c.textContent=String(i+1);}var l=document.getElementById(uid+'-l'+i);if(l)l.className=i<cur?'lcms-step-line done':'lcms-step-line';}var bk=document.getElementById(uid+'-bk');if(bk)bk.disabled=cur===0;var nx=document.getElementById(uid+'-nx');if(nx)nx.textContent=cur===steps.length-1?'\u5b8c\u6210 \u2713':'\u7e7c\u7e8c \u2192';}var bk=document.getElementById(uid+'-bk');var nx=document.getElementById(uid+'-nx');if(bk)bk.addEventListener('click',function(){if(cur>0){cur--;render();}});if(nx)nx.addEventListener('click',function(){if(cur<steps.length-1){cur++;render();}else{cur=0;render();}});render();})();</script>
 <div class="lcms-terminal" style="margin:14px 0">
   <div class="lcms-terminal-head">
     <span class="lcms-dot r"></span><span class="lcms-dot y"></span><span class="lcms-dot g"></span>
