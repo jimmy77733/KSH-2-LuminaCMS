@@ -69,42 +69,84 @@
     .lcms-content a { color: var(--accent); text-decoration: none; }
     .lcms-content a:hover { text-decoration: underline; }
 
-:root{
-      --bg-body:#070a0f;
-      --bg-card:#0b1220;
-      --fg-primary:#e5e7eb;
-      --fg-secondary:#94a3b8;
-      --accent:#38bdf8;
-      --shadow-card:0 18px 60px rgba(0,0,0,0.55);
+:root {
+      --bg-body: #000000;
+      --bg-card: rgba(0, 0, 0, 0.55);
+      --fg-primary: #e2fce8;
+      --fg-secondary: #61dca3;
+      --accent: #61b3dc;
+      --radius-card: 24px;
+      --shadow-card: 0 18px 60px rgba(0,0,0,0.7);
     }
-    body{
-      background: radial-gradient(1100px 420px at 50% -10%, rgba(56,189,248,0.18), transparent 60%),
-                  radial-gradient(900px 360px at 15% 12%, rgba(34,197,94,0.10), transparent 55%),
-                  var(--bg-body);
+    /* 深色後備放在 html 層，body 透明讓 canvas 穿透顯示 */
+    html { background: #000; }
+    body { background: transparent; }
+    .lcms-nav {
+      background: rgba(0, 0, 0, 0.72);
+      border: 1px solid rgba(97, 220, 163, 0.18);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
     }
-    body::after{
-      content:"";
-      position:fixed; inset:0;
-      pointer-events:none;
-      opacity:0.55;
-      background-image:
-        linear-gradient(to right, rgba(255,255,255,0.14) 1px, transparent 0),
-        linear-gradient(to bottom, rgba(255,255,255,0.14) 1px, transparent 0);
-      background-size:64px 64px;
-      transform: perspective(220px) rotateX(65deg) translateY(-55%);
-      transform-origin: 50% 0%;
-      animation: lcms-retrogrid-scroll 15s linear infinite;
-      mix-blend-mode:screen;
+    .lcms-nav-title { color: var(--fg-secondary); }
+    .lcms-nav-dot {
+      background: linear-gradient(135deg, #61dca3, #61b3dc);
+      box-shadow: 0 0 0 3px rgba(97,220,163,0.3);
     }
-    @keyframes lcms-retrogrid-scroll{
-      from{transform: perspective(220px) rotateX(65deg) translateY(-55%)}
-      to{transform: perspective(220px) rotateX(65deg) translateY(-10%)}
+    .lcms-card {
+      background: rgba(0, 0, 0, 0.58);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(97, 220, 163, 0.15);
+      box-shadow: var(--shadow-card);
     }
+    .lcms-title { color: #e2fce8; }
+    .lcms-meta { color: var(--fg-secondary); }
+    .lcms-content { color: rgba(226, 252, 232, 0.92); }
+    .lcms-content a { color: var(--accent); }
 html, body { min-height: 100%; }
     body { min-height: 100vh; background-color: var(--bg-body); }
+body { background: transparent !important; background-color: transparent !important; }
+    #lcms-bg-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; display: block; }
+    .lcms-shell { position: relative; z-index: 1; }
     </style>
   </head>
   <body>
+    <canvas id="lcms-bg-canvas"></canvas>
+    <script>
+(function(){
+  var c=document.getElementById('lcms-bg-canvas');if(!c)return;
+  var ctx=c.getContext('2d');
+  var chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$&*()-_+=/[]{};:<>.,0123456789';
+  var colors=['#2b4539','#61dca3','#61b3dc'];
+  var cW=10,cH=20,letters=[],cols=0;
+  function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+  function resize(){
+    c.width=window.innerWidth;c.height=window.innerHeight;
+    cols=Math.ceil(c.width/cW);var rows=Math.ceil(c.height/cH);
+    letters=[];for(var i=0;i<cols*rows;i++)letters.push({ch:rnd(chars),co:rnd(colors)});
+  }
+  function draw(){
+    ctx.fillStyle='#000';ctx.fillRect(0,0,c.width,c.height);
+    ctx.font='16px monospace';ctx.textBaseline='top';
+    for(var i=0;i<letters.length;i++){
+      ctx.fillStyle=letters[i].co;ctx.fillText(letters[i].ch,(i%cols)*cW,Math.floor(i/cols)*cH);
+    }
+    var g=ctx.createRadialGradient(c.width/2,c.height/2,0,c.width/2,c.height/2,Math.max(c.width,c.height)*0.7);
+    g.addColorStop(0.6,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,1)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,c.width,c.height);
+  }
+  var last=0;
+  function animate(ts){
+    if(ts-last>=50){
+      var n=Math.max(1,letters.length*0.05|0);
+      for(var i=0;i<n;i++){var idx=Math.random()*letters.length|0;letters[idx]={ch:rnd(chars),co:rnd(colors)};}
+      draw();last=ts;
+    }
+    requestAnimationFrame(animate);
+  }
+  window.addEventListener('resize',function(){resize();draw();});
+  resize();draw();requestAnimationFrame(animate);
+})();
+    </script>
     <div class="lcms-shell">
       <header class="lcms-nav">
         <div class="lcms-nav-title">LuminaCMS · Journal</div>
@@ -112,14 +154,99 @@ html, body { min-height: 100%; }
       </header>
       <article class="lcms-card">
         <div class="lcms-meta">
-          <span>2026-03-18</span>
+          <span>2026-03-20</span>
           <span class="lcms-meta-dot"></span>
           <span>LuminaCMS</span>
         </div>
         <h1 class="lcms-title">測試5</h1>
         <section class="lcms-content">
-          <div style="padding:24px;border-radius:24px;margin:12px 0;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08);"><p style="font-size:28px;color:#111111;font-weight:700;margin:0.4em 0;line-height:1.6">新的 LuminaCMS 文章</p>
-<p style="font-size:16px;color:#6e6e73;font-weight:400;margin:0.4em 0;line-height:1.6">在這裡開始撰寫你的內容…</p></div>
+          <svg id="lcms-morph-filter" style="position:fixed;height:0;width:0;pointer-events:none;overflow:hidden" aria-hidden="true">
+  <defs>
+    <filter id="lcms-threshold">
+      <feColorMatrix in="SourceGraphic" type="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140"/>
+    </filter>
+  </defs>
+</svg>
+<style>@keyframes lcms-decrypt-blink{
+        0%,100%{opacity:1}50%{opacity:0.3}
+      }
+      .lcms-decrypt-encrypted{
+        color:#0071e3;
+        animation:lcms-decrypt-blink 0.4s ease-in-out infinite;
+      }
+      .lcms-decrypt-revealed{color:inherit}
+      .lcms-decrypt-wrap{
+        display:inline-block;font-weight:700;letter-spacing:-0.01em;
+      }</style>
+<div id="eerxba6k" style="padding:28px;min-height:280px;border-radius:24px;margin:12px 0;position:relative;overflow:hidden;background:#000000;">
+<script>(function(){
+var ctn=document.getElementById('eerxba6k');
+if(!ctn)return;
+var canvas=document.createElement('canvas');
+canvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;';
+ctn.insertBefore(canvas,ctn.firstChild);
+var gl=canvas.getContext('webgl',{alpha:false})||canvas.getContext('experimental-webgl',{alpha:false});
+if(!gl){ctn.style.background='radial-gradient(ellipse 80% 55% at 50% 50%,#00aaff99 0%,#00aaff44 35%,#000000 60%)';return;}
+gl.clearColor(0.0000,0.0000,0.0000,1);
+var SZ=256;
+function eeHash(x,y,s){var n=((x*374761393+y*668265263+s*1274126177)|0);n=(Math.imul(n^(n>>>13),1274126177))|0;return((n^(n>>>16))>>>0)/4294967296;}
+function eeNoise(px,py,freq,seed){var fx=(px/SZ)*freq,fy=(py/SZ)*freq;var ix=Math.floor(fx),iy=Math.floor(fy);var tx=fx-ix,ty=fy-iy;var w=freq|0;var v00=eeHash(((ix%w)+w)%w,((iy%w)+w)%w,seed);var v10=eeHash((((ix+1)%w)+w)%w,((iy%w)+w)%w,seed);var v01=eeHash(((ix%w)+w)%w,(((iy+1)%w)+w)%w,seed);var v11=eeHash((((ix+1)%w)+w)%w,(((iy+1)%w)+w)%w,seed);return v00*(1-tx)*(1-ty)+v10*tx*(1-ty)+v01*(1-tx)*ty+v11*tx*ty;}
+var nd=new Uint8Array(SZ*SZ*4);
+for(var ny=0;ny<SZ;ny++){for(var nx=0;nx<SZ;nx++){var nv=0,na=0.4,nta=0;for(var no=0;no<8;no++){var nf=32*(1<<no);nv+=na*eeNoise(nx,ny,nf,no*31);nta+=na;na*=0.65;}nv/=nta;nv=(nv-0.5)*2.2+0.5;nv=Math.max(0,Math.min(1,nv));var nval=Math.round(nv*255);var ni=(ny*SZ+nx)*4;nd[ni]=nval;nd[ni+1]=nval;nd[ni+2]=nval;nd[ni+3]=255;}}
+var tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,SZ,SZ,0,gl.RGBA,gl.UNSIGNED_BYTE,nd);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+var vs=['attribute vec2 uv;','attribute vec2 position;','varying vec2 vUv;','void main(){vUv=uv;gl_Position=vec4(position,0,1);}'].join('\n');
+var fs=['precision highp float;','uniform float uTime;uniform vec3 uResolution;uniform sampler2D uNoiseTexture;','uniform float uPupilSize;uniform float uIrisWidth;uniform float uGlowIntensity;','uniform float uIntensity;uniform float uScale;uniform float uNoiseScale;','uniform vec2 uMouse;uniform float uPupilFollow;uniform float uFlameSpeed;','uniform vec3 uEyeColor;uniform vec3 uBgColor;','void main(){','  vec2 uv=(gl_FragCoord.xy*2.0-uResolution.xy)/uResolution.y;','  uv/=uScale;','  float ft=uTime*uFlameSpeed;','  float polarRadius=length(uv)*2.0;','  float polarAngle=(2.0*atan(uv.x,uv.y))/6.28*0.3;','  vec2 polarUv=vec2(polarRadius,polarAngle);','  vec4 noiseA=texture2D(uNoiseTexture,polarUv*vec2(0.2,7.0)*uNoiseScale+vec2(-ft*0.1,0.0));','  vec4 noiseB=texture2D(uNoiseTexture,polarUv*vec2(0.3,4.0)*uNoiseScale+vec2(-ft*0.2,0.0));','  vec4 noiseC=texture2D(uNoiseTexture,polarUv*vec2(0.1,5.0)*uNoiseScale+vec2(-ft*0.1,0.0));','  float distanceMask=1.0-length(uv);','  float innerRing=clamp(-1.0*((distanceMask-0.7)/uIrisWidth),0.0,1.0);','  innerRing=(innerRing*distanceMask-0.2)/0.28;','  innerRing+=noiseA.r-0.5;innerRing*=1.3;innerRing=clamp(innerRing,0.0,1.0);','  float outerRing=clamp(-1.0*((distanceMask-0.5)/0.2),0.0,1.0);','  outerRing=(outerRing*distanceMask-0.1)/0.38;','  outerRing+=noiseC.r-0.5;outerRing*=1.3;outerRing=clamp(outerRing,0.0,1.0);','  innerRing+=outerRing;','  float innerEye=distanceMask-0.1*2.0;innerEye*=noiseB.r*2.0;','  vec2 pupilOffset=uMouse*uPupilFollow*0.12;','  vec2 pupilUv=uv-pupilOffset;','  float pupil=1.0-length(pupilUv*vec2(9.0,2.3));','  pupil*=uPupilSize;pupil=clamp(pupil,0.0,1.0);pupil/=0.35;','  float outerEyeGlow=1.0-length(uv*vec2(0.5,1.5));','  outerEyeGlow=clamp(outerEyeGlow+0.5,0.0,1.0);outerEyeGlow+=noiseC.r-0.5;','  float outerBgGlow=outerEyeGlow;','  outerEyeGlow=pow(outerEyeGlow,2.0);outerEyeGlow+=distanceMask;','  outerEyeGlow*=uGlowIntensity;outerEyeGlow=clamp(outerEyeGlow,0.0,1.0);','  outerEyeGlow*=pow(1.0-distanceMask,2.0)*2.5;','  outerBgGlow+=distanceMask;outerBgGlow=pow(outerBgGlow,0.5);outerBgGlow*=0.15;','  vec3 color=uEyeColor*uIntensity*clamp(max(innerRing+innerEye,outerEyeGlow+outerBgGlow)-pupil,0.0,3.0);','  color+=uBgColor;','  gl_FragColor=vec4(color,1.0);','}'].join('\n');
+function mkS(type,src){var s=gl.createShader(type);if(!s)return null;gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){console.warn('[EvilEye shader]',gl.getShaderInfoLog(s));return null;}return s;}
+var prog=gl.createProgram();if(!prog)return;
+var vs2=mkS(gl.VERTEX_SHADER,vs),fs2=mkS(gl.FRAGMENT_SHADER,fs);
+if(!vs2||!fs2)return;
+gl.attachShader(prog,vs2);gl.attachShader(prog,fs2);gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){console.warn('[EvilEye link]',gl.getProgramInfoLog(prog));return;}
+gl.useProgram(prog);
+var posArr=new Float32Array([-1,-1,3,-1,-1,3]),uvArr=new Float32Array([0,0,2,0,0,2]);
+function bindBuf(data,attr){var b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);var l=gl.getAttribLocation(prog,attr);if(l>=0){gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,2,gl.FLOAT,false,0,0);}}
+bindBuf(posArr,'position');bindBuf(uvArr,'uv');
+gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);
+gl.uniform1i(gl.getUniformLocation(prog,'uNoiseTexture'),0);
+var u={time:gl.getUniformLocation(prog,'uTime'),res:gl.getUniformLocation(prog,'uResolution'),pupilSize:gl.getUniformLocation(prog,'uPupilSize'),irisWidth:gl.getUniformLocation(prog,'uIrisWidth'),glowIntensity:gl.getUniformLocation(prog,'uGlowIntensity'),intensity:gl.getUniformLocation(prog,'uIntensity'),scale:gl.getUniformLocation(prog,'uScale'),noiseScale:gl.getUniformLocation(prog,'uNoiseScale'),mouse:gl.getUniformLocation(prog,'uMouse'),pupilFollow:gl.getUniformLocation(prog,'uPupilFollow'),flameSpeed:gl.getUniformLocation(prog,'uFlameSpeed'),eyeColor:gl.getUniformLocation(prog,'uEyeColor'),bgColor:gl.getUniformLocation(prog,'uBgColor')};
+gl.uniform1f(u.pupilSize,0.6000);gl.uniform1f(u.irisWidth,0.2500);gl.uniform1f(u.glowIntensity,0.3500);
+gl.uniform1f(u.intensity,1.5000);gl.uniform1f(u.scale,0.8000);gl.uniform1f(u.noiseScale,1.0000);
+gl.uniform1f(u.pupilFollow,1.0000);gl.uniform1f(u.flameSpeed,1.0000);
+gl.uniform3f(u.eyeColor,0.0000,0.6667,1.0000);
+gl.uniform3f(u.bgColor,0.0000,0.0000,0.0000);
+gl.uniform2f(u.mouse,0,0);
+function eeResize(){var w=ctn.offsetWidth||300;var h2=ctn.offsetHeight||280;canvas.width=w;canvas.height=h2;gl.viewport(0,0,w,h2);gl.uniform3f(u.res,w,h2,w/Math.max(h2,1));}
+window.addEventListener('resize',eeResize);
+var mx=0,my=0,tmx=0,tmy=0;
+ctn.addEventListener('mousemove',function(e){var r=ctn.getBoundingClientRect();tmx=((e.clientX-r.left)/r.width)*2-1;tmy=-(((e.clientY-r.top)/r.height)*2-1);});
+ctn.addEventListener('mouseleave',function(){tmx=0;tmy=0;});
+function eeAnimate(t){requestAnimationFrame(eeAnimate);mx+=(tmx-mx)*0.05;my+=(tmy-my)*0.05;gl.uniform1f(u.time,t*0.001);gl.uniform2f(u.mouse,mx,my);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLES,0,3);}
+requestAnimationFrame(function(){eeResize();requestAnimationFrame(eeAnimate);});
+})();</script>
+<div style="position:relative;z-index:2;"></div>
+</div>
+<div style="padding:24px;border-radius:24px;margin:12px 0;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.08);"><style>
+@keyframes mt_fizh0y_show{0%{opacity:0;filter:blur(14px)}5.00%{opacity:1;filter:blur(0)}17.50%{opacity:1;filter:blur(0)}22.50%{opacity:0;filter:blur(14px)}25.00%,100%{opacity:0;filter:blur(14px)}}
+.mt_fizh0y{position:relative;height:60px;margin:0.8em 0;text-align:center;filter:url(#lcms-threshold) blur(0.5px);}
+.mt_fizh0y span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700;color:#111111;line-height:1;opacity:0;animation:mt_fizh0y_show 10.0s ease-in-out infinite;}
+</style>
+<div class="mt_fizh0y" aria-label="超級大眼睛 / 他會一直盯著你啊 / 就像你盯著這段字一樣 / 還看阿 看甚麼看?????">
+<span style="animation-delay:0.00s">超級大眼睛</span>
+<span style="animation-delay:2.50s">他會一直盯著你啊</span>
+<span style="animation-delay:5.00s">就像你盯著這段字一樣</span>
+<span style="animation-delay:7.50s">還看阿 看甚麼看?????</span>
+</div>
+<style>
+@keyframes dt_w7yub4_reveal{0%{color:#0071e3;opacity:0.4}100%{color:#111111;opacity:1}}
+.dt_w7yub4-char{display:inline;animation:dt_w7yub4_reveal 0.3s ease forwards;}
+</style>
+<div style="font-size:28px;font-weight:700;color:#111111;text-align:center;margin:12px 0;letter-spacing:-0.01em;" class="lcms-decrypt-wrap">
+<span class="dt_w7yub4-char" style="animation-delay:0.00s">!</span><span class="dt_w7yub4-char" style="animation-delay:0.04s">@</span><span class="dt_w7yub4-char" style="animation-delay:0.08s">#</span><span class="dt_w7yub4-char" style="animation-delay:0.12s">$</span><span class="dt_w7yub4-char" style="animation-delay:0.16s">%</span><span class="dt_w7yub4-char" style="animation-delay:0.20s">^</span><span class="dt_w7yub4-char" style="animation-delay:0.24s">&</span><span class="dt_w7yub4-char" style="animation-delay:0.28s">a</span><span class="dt_w7yub4-char" style="animation-delay:0.32s">m</span><span class="dt_w7yub4-char" style="animation-delay:0.36s">p</span><span class="dt_w7yub4-char" style="animation-delay:0.40s">;</span><span class="dt_w7yub4-char" style="animation-delay:0.44s">&</span><span class="dt_w7yub4-char" style="animation-delay:0.48s">a</span><span class="dt_w7yub4-char" style="animation-delay:0.52s">m</span><span class="dt_w7yub4-char" style="animation-delay:0.56s">p</span><span class="dt_w7yub4-char" style="animation-delay:0.60s">;</span><span class="dt_w7yub4-char" style="animation-delay:0.64s">^</span><span class="dt_w7yub4-char" style="animation-delay:0.68s">%</span><span class="dt_w7yub4-char" style="animation-delay:0.72s">$</span><span class="dt_w7yub4-char" style="animation-delay:0.76s">#</span><span class="dt_w7yub4-char" style="animation-delay:0.80s">@</span><span class="dt_w7yub4-char" style="animation-delay:0.84s">!</span><span class="dt_w7yub4-char" style="animation-delay:0.88s">@</span><span class="dt_w7yub4-char" style="animation-delay:0.92s">#</span><span class="dt_w7yub4-char" style="animation-delay:0.96s">$</span><span class="dt_w7yub4-char" style="animation-delay:1.00s">%</span>
+</div></div>
         </section>
       </article>
     </div>
