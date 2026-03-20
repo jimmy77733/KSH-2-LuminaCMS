@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { PostHtmlViewer } from "@/components/editor/PostHtmlViewer";
 
 type PostRow = {
   id: string;
@@ -49,12 +50,8 @@ export default async function PostPreviewPage({
         </Link>
       </div>
 
-      {/* 渲染 htmlSnapshot — 這是從 Template Engine 產生的完整 HTML */}
-      <div
-        className="pt-12"
-        /* eslint-disable-next-line react/no-danger */
-        dangerouslySetInnerHTML={{ __html: post.htmlSnapshot }}
-      />
+      {/* 渲染 htmlSnapshot — 必須用 iframe srcdoc 才能執行 bgScript */}
+      <PostHtmlViewer html={post.htmlSnapshot} />
     </>
   );
 }

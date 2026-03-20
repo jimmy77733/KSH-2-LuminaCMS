@@ -30,6 +30,7 @@ export async function GET() {
         displayName: config.displayName ?? row.name,
         description: config.description ?? "",
         preview: config.preview ?? "#F5F5F7",
+        bgScript: (config.bgScript as string) ?? "",
       };
     });
 

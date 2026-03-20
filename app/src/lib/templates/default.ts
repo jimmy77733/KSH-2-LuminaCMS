@@ -246,14 +246,157 @@ export function getFlickeringGridTemplateCss(): string {
   return `${getDefaultCss()}\n\n${extra}`.trim();
 }
 
+// ─── Background Templates (JS Canvas / WebGL；用於動態背景模板) ─────────────────
+
+export function getLetterGlitchTemplateCss(): string {
+  const extra = `
+    :root {
+      --bg-body: #000000;
+      --bg-card: rgba(0, 0, 0, 0.55);
+      --fg-primary: #e2fce8;
+      --fg-secondary: #61dca3;
+      --accent: #61b3dc;
+      --radius-card: 24px;
+      --shadow-card: 0 18px 60px rgba(0,0,0,0.7);
+    }
+    /* 深色後備放在 html 層，body 透明讓 canvas 穿透顯示 */
+    html { background: #000; }
+    body { background: transparent; }
+    .lcms-nav {
+      background: rgba(0, 0, 0, 0.72);
+      border: 1px solid rgba(97, 220, 163, 0.18);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    }
+    .lcms-nav-title { color: var(--fg-secondary); }
+    .lcms-nav-dot {
+      background: linear-gradient(135deg, #61dca3, #61b3dc);
+      box-shadow: 0 0 0 3px rgba(97,220,163,0.3);
+    }
+    .lcms-card {
+      background: rgba(0, 0, 0, 0.58);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(97, 220, 163, 0.15);
+      box-shadow: var(--shadow-card);
+    }
+    .lcms-title { color: #e2fce8; }
+    .lcms-meta { color: var(--fg-secondary); }
+    .lcms-content { color: rgba(226, 252, 232, 0.92); }
+    .lcms-content a { color: var(--accent); }
+  `.trim();
+  return `${getDarkCss()}\n\n${extra}`.trim();
+}
+
+export function getDotGridTemplateCss(): string {
+  const extra = `
+    :root {
+      --bg-body: #0a0814;
+      --bg-card: rgba(39, 30, 55, 0.72);
+      --fg-primary: #e8e2fc;
+      --fg-secondary: #9b8ec4;
+      --accent: #7c5cfc;
+      --radius-card: 24px;
+      --shadow-card: 0 18px 60px rgba(82,39,255,0.18);
+    }
+    /* 深色後備放在 html 層，body 透明讓 canvas 穿透顯示 */
+    html { background: #0a0814; }
+    body { background: transparent; }
+    .lcms-nav {
+      background: rgba(10, 8, 20, 0.82);
+      border: 1px solid rgba(124, 92, 252, 0.22);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+    }
+    .lcms-nav-title { color: var(--fg-secondary); }
+    .lcms-nav-dot {
+      background: linear-gradient(135deg, #7c5cfc, #38bdf8);
+      box-shadow: 0 0 0 3px rgba(124,92,252,0.3);
+    }
+    .lcms-card {
+      background: rgba(39, 30, 55, 0.72);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(124, 92, 252, 0.18);
+      box-shadow: var(--shadow-card);
+    }
+    .lcms-title { color: #e8e2fc; }
+    .lcms-meta { color: var(--fg-secondary); }
+    .lcms-content { color: rgba(232, 226, 252, 0.9); }
+    .lcms-content a { color: var(--accent); }
+  `.trim();
+  return `${getDarkCss()}\n\n${extra}`.trim();
+}
+
+export function getGalaxyTemplateCss(): string {
+  const extra = `
+    :root {
+      --bg-body: #000010;
+      --bg-card: rgba(0, 0, 16, 0.48);
+      --fg-primary: #f0f4ff;
+      --fg-secondary: #94a3b8;
+      --accent: #7dd3fc;
+      --radius-card: 24px;
+      --shadow-card: 0 18px 60px rgba(0,0,60,0.55);
+    }
+    /* 深色後備放在 html 層，body 透明讓 canvas 穿透顯示 */
+    html { background: #000010; }
+    body { background: transparent; }
+    .lcms-nav {
+      background: rgba(0, 0, 20, 0.75);
+      border: 1px solid rgba(125, 211, 252, 0.15);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    }
+    .lcms-nav-title { color: var(--fg-secondary); }
+    .lcms-nav-dot {
+      background: linear-gradient(135deg, #7dd3fc, #a78bfa);
+      box-shadow: 0 0 0 3px rgba(125,211,252,0.3);
+    }
+    .lcms-card {
+      background: rgba(0, 0, 16, 0.48);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(125, 211, 252, 0.12);
+      box-shadow: var(--shadow-card);
+    }
+    .lcms-title { color: #f0f4ff; }
+    .lcms-meta { color: var(--fg-secondary); }
+    .lcms-content { color: rgba(240, 244, 255, 0.88); }
+    .lcms-content a { color: var(--accent); }
+  `.trim();
+  return `${getDarkCss()}\n\n${extra}`.trim();
+}
+
 // ─── HTML 骨架（含 {{CSS}} / {{TITLE}} / {{CONTENT}} / {{DATE}} 佔位符）────────
 
-export function getTemplateShell(cssContent?: string): string {
+export interface TemplateShellOptions {
+  /** 動態背景的 JS 腳本（挂載至 #lcms-bg-canvas）*/
+  bgScript?: string;
+}
+
+export function getTemplateShell(cssContent?: string, opts?: TemplateShellOptions): string {
   const css = cssContent ?? getDefaultCss();
+  const hasBg = !!opts?.bgScript;
+
   const layoutFix = `
     html, body { min-height: 100%; }
     body { min-height: 100vh; background-color: var(--bg-body); }
   `.trim();
+
+  // 動態 canvas 背景：body 必須透明，canvas z-index:0，內容 z-index:1
+  const bgLayerCss = hasBg
+    ? `
+    body { background: transparent !important; background-color: transparent !important; }
+    #lcms-bg-canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; display: block; }
+    .lcms-shell { position: relative; z-index: 1; }
+  `.trim()
+    : "";
+
+  const bgCanvasHtml = hasBg
+    ? `\n    <canvas id="lcms-bg-canvas"></canvas>`
+    : "";
+  const bgScriptHtml = hasBg
+    ? `\n    <script>\n${opts!.bgScript}\n    </script>`
+    : "";
+
   return `<!DOCTYPE html>
 <html lang="zh-Hant">
   <head>
@@ -263,9 +406,10 @@ export function getTemplateShell(cssContent?: string): string {
     <style>
 ${css}
 ${layoutFix}
+${hasBg ? bgLayerCss : ""}
     </style>
   </head>
-  <body>
+  <body>${bgCanvasHtml}${bgScriptHtml}
     <div class="lcms-shell">
       <header class="lcms-nav">
         <div class="lcms-nav-title">LuminaCMS · Journal</div>

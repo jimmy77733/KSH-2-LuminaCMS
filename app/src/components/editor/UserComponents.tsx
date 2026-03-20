@@ -3,6 +3,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, useNode } from "@craftjs/core";
 import { MorphingText } from "@/components/ui/MorphingText";
+import EvilEye, { type EvilEyeProps } from "@/components/ui/EvilEye";
+import CircularGallery, { type CircularGalleryProps } from "@/components/ui/CircularGallery";
+import PixelCard, { type PixelCardProps } from "@/components/ui/PixelCard";
+import Stepper, { Step } from "@/components/ui/Stepper";
+import DecryptedText from "@/components/ui/DecryptedText";
 import { Terminal } from "@/components/ui/terminalCSS";
 import {
   ScrollVelocityContainer,
@@ -293,6 +298,8 @@ export const ImageComponent: React.FC<ImageProps> & { craft?: unknown } = (
   const [showPicker, setShowPicker] = useState(false);
   const [mediaItems, setMediaItems] = useState<MediaPickerItem[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const borderStyle: ImageBorderStyle = props.borderStyle ?? "ios-inset";
   const borderDef = IMAGE_BORDER_STYLES[borderStyle];
@@ -327,6 +334,25 @@ export const ImageComponent: React.FC<ImageProps> & { craft?: unknown } = (
       p.thumb = item.paths.thumb;
     });
     setShowPicker(false);
+  };
+
+  const handleDirectUpload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", files[0]);
+      const res = await fetch("/api/media/upload", { method: "POST", body: form });
+      if (!res.ok) throw new Error("上傳失敗");
+      const data = (await res.json()) as MediaPickerItem;
+      applyMedia(data);
+      // 同步媒體庫列表（如果已開啟過則重置，下次開啟時重新載入）
+      setMediaItems([]);
+    } catch {
+      // ignore
+    } finally {
+      setUploading(false);
+    }
   };
 
   const displaySrc =
@@ -384,6 +410,22 @@ export const ImageComponent: React.FC<ImageProps> & { craft?: unknown } = (
               </button>
             ))}
           </div>
+          {/* 直接上傳按鈕 */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => { void handleDirectUpload(e.target.files); e.target.value = ""; }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute bottom-2 right-28 z-10 rounded-full bg-emerald-600/80 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-emerald-600"
+            disabled={uploading}
+          >
+            {uploading ? "上傳中…" : "直接上傳"}
+          </button>
           <button
             type="button"
             onClick={() => { void togglePicker(); }}
@@ -517,6 +559,103 @@ export const Container: React.FC<ContainerProps> & { craft?: unknown } = (
 Container.craft = {
   displayName: "Container",
   props: { padding: 24, variant: "default" },
+  isCanvas: true,
+  rules: {
+    canMoveIn: () => true,
+  },
+};
+
+// ===== EvilEyeContainer =====
+type EvilEyeContainerProps = EvilEyeProps & {
+  padding: number;
+  height: number;
+  children?: React.ReactNode;
+};
+
+export const EvilEyeContainer: React.FC<EvilEyeContainerProps> & {
+  craft?: unknown;
+} = (props) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const { padding, height, children, ...evilProps } = props;
+  const safeHeight = Number.isFinite(height) ? height : 280;
+
+  return (
+    <div
+      ref={(ref) => { if (ref) connect(drag(ref)); }}
+      className="relative w-full overflow-hidden rounded-[24px] bg-white/10 shadow-lg ring-1 ring-white/20 backdrop-blur"
+      style={{ padding, minHeight: safeHeight }}
+    >
+      <div className="absolute inset-0 z-0 overflow-hidden rounded-[24px]">
+        <EvilEye {...evilProps} />
+      </div>
+
+      {selected && (
+        <div className="absolute left-3 top-3 z-20 rounded-xl bg-black/80 px-3 py-2 text-[11px] text-white shadow ring-1 ring-white/20 backdrop-blur flex flex-col gap-2 min-w-[180px]">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">高度</span>
+            <input
+              type="number" min={120} max={800}
+              className="w-20 rounded-md border border-white/20 bg-white/10 px-2 py-1 text-[11px] text-white"
+              value={safeHeight}
+              onChange={(e) => setProp((p: EvilEyeContainerProps) => { p.height = Number(e.target.value || 280); })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">眼色</span>
+            <input
+              type="color"
+              className="h-6 w-10 cursor-pointer rounded border-0 bg-transparent"
+              value={String(evilProps.eyeColor ?? "#ff6a00")}
+              onChange={(e) => setProp((p: EvilEyeContainerProps) => { p.eyeColor = e.target.value; })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+            <span className="font-mono text-white/60">{String(evilProps.eyeColor ?? "#ff6a00")}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">背景</span>
+            <input
+              type="color"
+              className="h-6 w-10 cursor-pointer rounded border-0 bg-transparent"
+              value={String(evilProps.backgroundColor ?? "#000000")}
+              onChange={(e) => setProp((p: EvilEyeContainerProps) => { p.backgroundColor = e.target.value; })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+            <span className="font-mono text-white/60">{String(evilProps.backgroundColor ?? "#000000")}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">內距</span>
+            <input
+              type="number" min={0} max={80}
+              className="w-20 rounded-md border border-white/20 bg-white/10 px-2 py-1 text-[11px] text-white"
+              value={padding}
+              onChange={(e) => setProp((p: EvilEyeContainerProps) => { p.padding = Number(e.target.value || 0); })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-10">{children}</div>
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-[24px]" />}
+    </div>
+  );
+};
+
+EvilEyeContainer.craft = {
+  displayName: "EvilEyeContainer",
+  props: { padding: 24, height: 280, eyeColor: "#ff6a00", backgroundColor: "#000000" },
   isCanvas: true,
   rules: {
     canMoveIn: () => true,
@@ -932,6 +1071,519 @@ export const FlickeringGridComponent: React.FC<FxBoxProps> & { craft?: unknown }
 FlickeringGridComponent.craft = {
   displayName: "FlickeringGrid",
   props: { height: 220 },
+};
+
+// ===== CircularGalleryComponent =====
+
+type CircularGalleryComponentProps = CircularGalleryProps & {
+  height?: number;
+};
+
+export const CircularGalleryComponent: React.FC<CircularGalleryComponentProps> & { craft?: unknown } = (props) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const [showPicker, setShowPicker] = useState(false);
+  const [mediaItems, setMediaItems] = useState<MediaPickerItem[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
+
+  const { height, ...galleryProps } = props;
+  const safeHeight = Number.isFinite(height) ? (height as number) : 400;
+  const safeItems = galleryProps.items ?? [];
+
+  const openPicker = async () => {
+    setShowPicker(true);
+    if (mediaItems.length > 0) return;
+    setLoadingMedia(true);
+    try {
+      const res = await fetch("/api/media");
+      const data = (await res.json()) as MediaPickerItem[];
+      setMediaItems(data);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingMedia(false);
+    }
+  };
+
+  const addGalleryItem = (item: MediaPickerItem) => {
+    const url = item.paths.large || item.paths.small || item.paths.thumb;
+    setProp((p: CircularGalleryComponentProps) => {
+      p.items = [...(p.items ?? []), { image: url, text: item.altText ?? item.originalName }];
+    });
+    setShowPicker(false);
+  };
+
+  const removeGalleryItem = (index: number) => {
+    setProp((p: CircularGalleryComponentProps) => {
+      p.items = (p.items ?? []).filter((_, i) => i !== index);
+    });
+  };
+
+  return (
+    <div
+      ref={(ref) => { if (ref) connect(drag(ref)); }}
+      className="relative my-4 w-full overflow-hidden rounded-3xl bg-zinc-950"
+      style={{ height: safeHeight }}
+    >
+      <CircularGallery {...galleryProps} />
+
+      {selected && (
+        <div className="absolute left-3 top-3 z-20 rounded-xl bg-white/90 px-3 py-2 text-[11px] text-zinc-700 shadow ring-1 ring-black/10 backdrop-blur flex flex-col gap-2 max-h-72 overflow-y-auto" style={{ minWidth: 210 }}>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">高度</span>
+            <input
+              type="number" min={200} max={800}
+              className="w-20 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={safeHeight}
+              onChange={(e) => setProp((p: CircularGalleryComponentProps) => { p.height = Number(e.target.value || 400); })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">彎曲</span>
+            <input
+              type="number" min={0} max={10} step={0.5}
+              className="w-20 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={galleryProps.bend ?? 3}
+              onChange={(e) => setProp((p: CircularGalleryComponentProps) => { p.bend = Number(e.target.value); })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          {/* 圖片管理 */}
+          <div className="border-t border-zinc-100 pt-2">
+            <div className="font-semibold mb-1">圖片 ({safeItems.length})</div>
+            {safeItems.length > 0 && (
+              <div className="flex flex-col gap-1 mb-1 max-h-28 overflow-y-auto">
+                {safeItems.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.image} alt={item.text} className="w-8 h-5 rounded object-cover flex-shrink-0" />
+                    <span className="flex-1 truncate text-[10px]">{item.text}</span>
+                    <button
+                      type="button"
+                      className="text-red-400 hover:text-red-600 text-[10px] flex-shrink-0 px-1"
+                      onClick={() => removeGalleryItem(idx)}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              className="w-full rounded-md bg-sky-500 px-2 py-1 text-white text-[10px] hover:bg-sky-600 transition"
+              onClick={() => { void openPicker(); }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              + 從媒體庫新增
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 媒體庫選圖面板 */}
+      {selected && showPicker && (
+        <div
+          className="absolute left-3 right-3 bottom-3 z-30 max-h-64 overflow-y-auto rounded-2xl bg-white/98 p-3 shadow-xl backdrop-blur-xl ring-1 ring-black/5"
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-zinc-700">選擇圖片加入 Gallery</span>
+            <button type="button" className="text-xs text-zinc-400 hover:text-zinc-600" onClick={() => setShowPicker(false)}>關閉</button>
+          </div>
+          {loadingMedia ? (
+            <p className="py-4 text-center text-xs text-zinc-500">載入中…</p>
+          ) : mediaItems.length === 0 ? (
+            <p className="py-4 text-center text-xs text-zinc-500">尚未上傳任何圖片。</p>
+          ) : (
+            <div className="grid grid-cols-4 gap-2">
+              {mediaItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="overflow-hidden rounded-xl ring-2 ring-transparent transition hover:ring-sky-400"
+                  onClick={() => addGalleryItem(item)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.paths.thumb} alt={item.altText ?? item.originalName} className="aspect-square h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-3xl" />}
+    </div>
+  );
+};
+
+CircularGalleryComponent.craft = {
+  displayName: "CircularGallery",
+  props: {
+    height: 400, bend: 3, textColor: "#ffffff", borderRadius: 0.05,
+    items: [
+      { image: "https://picsum.photos/seed/11/800/520", text: "Gallery" },
+      { image: "https://picsum.photos/seed/22/800/520", text: "Explore" },
+      { image: "https://picsum.photos/seed/33/800/520", text: "Discover" },
+      { image: "https://picsum.photos/seed/44/800/520", text: "Create" },
+    ],
+  },
+};
+
+// ===== PixelCardComponent =====
+
+type PixelCardComponentProps = PixelCardProps & {
+  height?: number;
+  children?: React.ReactNode;
+};
+
+export const PixelCardComponent: React.FC<PixelCardComponentProps> & { craft?: unknown } = (props) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const { height, children, ...cardProps } = props;
+  const safeHeight = Number.isFinite(height) ? (height as number) : 300;
+
+  return (
+    <div
+      ref={(ref) => { if (ref) connect(drag(ref)); }}
+      className="relative my-4 inline-block w-full"
+    >
+      <div style={{ height: safeHeight, width: "100%", borderRadius: "24px", overflow: "hidden" }}>
+        <PixelCard {...cardProps} className="w-full h-full" style={{ height: "100%", width: "100%", borderRadius: "24px" }}>
+          <div className="relative z-10 flex h-full w-full items-center justify-center p-4">
+            {children}
+          </div>
+        </PixelCard>
+      </div>
+
+      {selected && (
+        <div className="absolute left-3 top-3 z-20 rounded-xl bg-white/90 px-3 py-2 text-[11px] text-zinc-700 shadow ring-1 ring-black/10 backdrop-blur flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">高度</span>
+            <input
+              type="number" min={120} max={800}
+              className="w-20 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={safeHeight}
+              onChange={(e) => setProp((p: PixelCardComponentProps) => { p.height = Number(e.target.value || 300); })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">變體</span>
+            <select
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={cardProps.variant ?? "default"}
+              onChange={(e) => setProp((p: PixelCardComponentProps) => { p.variant = e.target.value as PixelCardProps["variant"]; })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {(["default", "blue", "yellow", "pink"] as const).map((v) => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-3xl" />}
+    </div>
+  );
+};
+
+PixelCardComponent.craft = {
+  displayName: "PixelCard",
+  props: { height: 300, variant: "default" },
+  isCanvas: true,
+  rules: { canMoveIn: () => true },
+};
+
+// ===== StepperComponent =====
+
+type StepperComponentProps = {
+  accentColor?: string;
+  step1?: string;
+  step2?: string;
+  step3?: string;
+  step1Content?: string;
+  step2Content?: string;
+  step3Content?: string;
+  titleColor?: string;
+  contentColor?: string;
+  contentBold?: boolean;
+};
+
+const STEP_KEYS = [
+  { titleKey: "step1" as const, contentKey: "step1Content" as const, label: "步驟 1" },
+  { titleKey: "step2" as const, contentKey: "step2Content" as const, label: "步驟 2" },
+  { titleKey: "step3" as const, contentKey: "step3Content" as const, label: "步驟 3" },
+];
+
+export const StepperComponent: React.FC<StepperComponentProps> & { craft?: unknown } = (props) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const {
+    step1 = "步驟一", step2 = "步驟二", step3 = "步驟三",
+    step1Content = "", step2Content = "", step3Content = "",
+    titleColor = "#111827",
+    contentColor = "#374151",
+    contentBold = false,
+  } = props;
+
+  const steps = [
+    { title: step1, content: step1Content },
+    { title: step2, content: step2Content },
+    { title: step3, content: step3Content },
+  ];
+
+  return (
+    <div
+      ref={(ref) => { if (ref) connect(drag(ref)); }}
+      className="relative my-4 w-full"
+    >
+      <Stepper initialStep={1} backButtonText="上一步" nextButtonText="下一步">
+        {steps.map((s, i) => (
+          <Step key={i}>
+            <h2 className="mb-2 text-lg font-bold" style={{ color: titleColor }}>{s.title}</h2>
+            {s.content && (
+              <p
+                className="text-sm whitespace-pre-wrap"
+                style={{ color: contentColor, fontWeight: contentBold ? 700 : 400 }}
+              >{s.content}</p>
+            )}
+          </Step>
+        ))}
+      </Stepper>
+
+      {selected && (
+        <div
+          className="absolute left-3 top-3 z-20 rounded-xl bg-white/90 px-3 py-2 text-[11px] text-zinc-700 shadow ring-1 ring-black/10 backdrop-blur flex flex-col gap-3"
+          style={{ minWidth: 256, maxHeight: 420, overflowY: "auto" }}
+        >
+          {/* 全域樣式 */}
+          <div className="flex flex-col gap-1.5 border-b border-zinc-100 pb-2">
+            <span className="font-semibold text-zinc-800 text-[11px]">全域樣式</span>
+            <div className="flex items-center gap-2">
+              <span className="w-14 shrink-0 text-zinc-500">標題顏色</span>
+              <input
+                type="color"
+                className="h-6 w-10 cursor-pointer rounded border border-zinc-200 p-0.5"
+                value={titleColor}
+                onChange={(e) => setProp((p: StepperComponentProps) => { p.titleColor = e.target.value; })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+              <input
+                type="text"
+                className="flex-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-mono"
+                value={titleColor}
+                onChange={(e) => setProp((p: StepperComponentProps) => { p.titleColor = e.target.value; })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-14 shrink-0 text-zinc-500">內文顏色</span>
+              <input
+                type="color"
+                className="h-6 w-10 cursor-pointer rounded border border-zinc-200 p-0.5"
+                value={contentColor}
+                onChange={(e) => setProp((p: StepperComponentProps) => { p.contentColor = e.target.value; })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+              <input
+                type="text"
+                className="flex-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-mono"
+                value={contentColor}
+                onChange={(e) => setProp((p: StepperComponentProps) => { p.contentColor = e.target.value; })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-14 shrink-0 text-zinc-500">內文粗體</span>
+              <button
+                type="button"
+                className={`rounded-md px-3 py-1 text-[11px] font-bold transition ${contentBold ? "bg-zinc-800 text-white" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"}`}
+                onClick={() => setProp((p: StepperComponentProps) => { p.contentBold = !p.contentBold; })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                B
+              </button>
+              <span className="text-zinc-400">{contentBold ? "已開啟" : "關閉"}</span>
+            </div>
+          </div>
+
+          {/* 各步驟文字 */}
+          {STEP_KEYS.map(({ titleKey, contentKey, label }) => (
+            <div key={titleKey} className="flex flex-col gap-1">
+              <span className="font-semibold text-zinc-800">{label}</span>
+              <input
+                type="text"
+                placeholder="標題"
+                className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+                value={props[titleKey] ?? ""}
+                onChange={(e) => setProp((p: StepperComponentProps) => { p[titleKey] = e.target.value; })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+              <textarea
+                placeholder="內文（可留空）"
+                rows={2}
+                className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] resize-none"
+                value={props[contentKey] ?? ""}
+                onChange={(e) => setProp((p: StepperComponentProps) => { p[contentKey] = e.target.value; })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-2xl" />}
+    </div>
+  );
+};
+
+StepperComponent.craft = {
+  displayName: "Stepper",
+  props: {
+    step1: "步驟一", step2: "步驟二", step3: "步驟三",
+    step1Content: "", step2Content: "", step3Content: "",
+    titleColor: "#111827", contentColor: "#374151", contentBold: false,
+  },
+};
+
+// ===== DecryptedTextComponent =====
+
+type DecryptedTextComponentProps = {
+  text?: string;
+  speed?: number;
+  animateOn?: "hover" | "view" | "click";
+  fontSize?: number;
+  color?: string;
+  encryptedColor?: string;
+};
+
+export const DecryptedTextComponent: React.FC<DecryptedTextComponentProps> & { craft?: unknown } = (props) => {
+  const {
+    id: nodeId,
+    connectors: { connect, drag },
+    selected,
+    actions: { setProp },
+  } = useNode((node) => ({ selected: node.events.selected, id: node.id }));
+
+  const { text = "Hover to decrypt", speed = 50, animateOn = "hover", fontSize = 28, color = "#111111", encryptedColor = "#0071e3" } = props;
+
+  return (
+    <div
+      ref={(ref) => { if (ref) connect(drag(ref)); }}
+      className="relative my-3 w-full text-center"
+      style={{ fontSize, color, fontWeight: 700 }}
+    >
+      <DecryptedText
+        text={text}
+        speed={speed}
+        animateOn={animateOn}
+        className="decrypted-revealed"
+        encryptedClassName="decrypted-encrypted"
+        sequential
+        revealDirection="start"
+      />
+
+      {selected && (
+        <div className="absolute left-0 top-full z-20 mt-1 rounded-xl bg-white/90 px-3 py-2 text-[11px] text-zinc-700 shadow ring-1 ring-black/10 backdrop-blur flex flex-col gap-2 min-w-[220px]">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">文字</span>
+            <input
+              type="text"
+              className="flex-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={text}
+              onChange={(e) => setProp((p: DecryptedTextComponentProps) => { p.text = e.target.value; })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">字體大小</span>
+            <input
+              type="number" min={12} max={120}
+              className="w-20 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={fontSize}
+              onChange={(e) => setProp((p: DecryptedTextComponentProps) => { p.fontSize = Number(e.target.value || 28); })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">顏色</span>
+            <input
+              type="color"
+              className="h-6 w-10 cursor-pointer rounded border-0 bg-transparent"
+              value={color}
+              onChange={(e) => setProp((p: DecryptedTextComponentProps) => { p.color = e.target.value; })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">觸發</span>
+            <select
+              className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={animateOn}
+              onChange={(e) => setProp((p: DecryptedTextComponentProps) => { p.animateOn = e.target.value as "hover" | "view" | "click"; })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <option value="hover">滑鼠懸停</option>
+              <option value="view">進入視野</option>
+              <option value="click">點擊</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold w-16 shrink-0">速度</span>
+            <input
+              type="number" min={10} max={300}
+              className="w-20 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px]"
+              value={speed}
+              onChange={(e) => setProp((p: DecryptedTextComponentProps) => { p.speed = Number(e.target.value || 50); })}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
+
+      {selected && <NodeOverlay nodeId={nodeId} radius="rounded-xl" />}
+    </div>
+  );
+};
+
+DecryptedTextComponent.craft = {
+  displayName: "DecryptedText",
+  props: { text: "Hover to decrypt", speed: 50, animateOn: "hover", fontSize: 28, color: "#111111", encryptedColor: "#0071e3" },
 };
 
 // ===== CanvasContainer（Root 畫布純容器）=====

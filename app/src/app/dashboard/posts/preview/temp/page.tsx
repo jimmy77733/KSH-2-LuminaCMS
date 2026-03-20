@@ -101,11 +101,13 @@ export default function TempPreviewPage() {
         </button>
       </div>
 
-      {/* 渲染完整 HTML */}
-      <div
-        className="pt-12"
-        /* eslint-disable-next-line react/no-danger */
-        dangerouslySetInnerHTML={{ __html: data.html }}
+      {/* 渲染完整 HTML — 必須用 iframe srcdoc，React dangerouslySetInnerHTML 不執行 <script> */}
+      <iframe
+        srcDoc={data.html}
+        className="w-full"
+        style={{ height: "calc(100vh - 48px)", border: "none", display: "block" }}
+        sandbox="allow-scripts allow-same-origin"
+        title="文章預覽"
       />
     </>
   );

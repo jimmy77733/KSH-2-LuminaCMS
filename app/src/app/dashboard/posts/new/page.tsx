@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   CanvasContainer,
   Container,
+  EvilEyeContainer,
   TextComponent,
   ImageComponent,
   MorphingTextComponent,
@@ -13,6 +14,10 @@ import {
   ScrolltextComponent,
   RetroGridComponent,
   FlickeringGridComponent,
+  CircularGalleryComponent,
+  PixelCardComponent,
+  StepperComponent,
+  DecryptedTextComponent,
   TEXT_PRESETS,
   CONTAINER_PRESETS,
 } from "@/components/editor/UserComponents";
@@ -27,6 +32,7 @@ type TemplateItem = {
   description: string;
   preview: string;
   cssContent: string;
+  bgScript: string;
 };
 
 const PREVIEW_STORAGE_KEY = "lumina_temp_preview";
@@ -210,9 +216,14 @@ function SidebarToolset() {
     { label: "文字區塊", icon: "T", el: () => <TextComponent text="雙擊編輯文字" fontSize={16} color="#111111" weight="normal" /> },
     { label: "圖片區塊", icon: "⬜", el: () => <ImageComponent src="" alt="" borderStyle="ios-inset" /> },
     { label: "容器區塊", icon: "▭", el: () => <Container padding={24} variant="default" /> },
+    { label: "邪眼背景（EvilEye）", icon: "👁", el: () => <EvilEyeContainer padding={24} height={280} eyeColor="#ff6a00" backgroundColor="#000000" /> },
     { label: "變形文字(Morphing)", icon: "✦", el: () => <MorphingTextComponent texts={"LuminaCMS\n創意無限\n自由排版"} fontSize={40} color="#111111" align="center" /> },
     { label: "終端機（Terminal）", icon: "⌘", el: () => <TerminalComponent lines={"$ npm install\n$ npm run dev\nReady"} /> },
     { label: "跑馬燈（Scrolltext）", icon: "≋", el: () => <ScrolltextComponent text="LuminaCMS · Scrolltext · CSS FX" baseVelocity={6} direction={1} /> },
+    { label: "環形圖庫（Gallery）", icon: "🎠", el: () => <CircularGalleryComponent height={400} bend={3} /> },
+    { label: "像素卡片（PixelCard）", icon: "✦", el: () => <PixelCardComponent height={260} variant="default" /> },
+    { label: "步驟精靈（Stepper）", icon: "◎", el: () => <StepperComponent /> },
+    { label: "解密文字（Decrypt）", icon: "🔐", el: () => <DecryptedTextComponent text="Hover to decrypt" fontSize={28} color="#111111" animateOn="hover" /> },
   ];
 
   return (
@@ -301,12 +312,15 @@ export default function NewPostPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectedTemplateCss =
-    templates.find((t) => t.id === selectedTemplateId)?.cssContent ?? "";
+  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
+  const selectedTemplateCss = selectedTemplate?.cssContent ?? "";
+  const selectedTemplateBgScript = selectedTemplate?.bgScript ?? "";
 
   const buildFullHtml = (json: string) => {
     const contentHtml = craftJsonToHtml(json) || "<p>（空白內容）</p>";
-    return getTemplateShell(selectedTemplateCss || undefined)
+    return getTemplateShell(selectedTemplateCss || undefined, {
+      bgScript: selectedTemplateBgScript || undefined,
+    })
       .replace(/{{TITLE}}/g, title)
       .replace(/{{CONTENT}}/g, contentHtml)
       .replace(/{{DATE}}/g, new Date().toISOString().slice(0, 10));
@@ -370,7 +384,7 @@ export default function NewPostPage() {
   const sidebarTop = toolbarOpen ? "top-[124px]" : "top-[72px]";
 
   return (
-    <Editor resolver={{ Container, TextComponent, ImageComponent, CanvasContainer, MorphingTextComponent, TerminalComponent, ScrolltextComponent, RetroGridComponent, FlickeringGridComponent }}>
+    <Editor resolver={{ Container, EvilEyeContainer, TextComponent, ImageComponent, CanvasContainer, MorphingTextComponent, TerminalComponent, ScrolltextComponent, RetroGridComponent, FlickeringGridComponent, CircularGalleryComponent, PixelCardComponent, StepperComponent, DecryptedTextComponent }}>
       <main className="flex min-h-screen flex-col bg-[#F5F5F7]">
         <KeyboardHandler />
 
